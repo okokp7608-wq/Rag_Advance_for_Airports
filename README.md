@@ -1,5 +1,7 @@
 # ✈️ 김포국제공항 소음대책 RAG 비교 검증 서비스
-
+ 
+ https://okokp7608-wq.github.io/Rag_Advance_for_Airports/
+ 
 본 프로젝트는 **김포국제공항 소음대책 요약 정보**(`김포공항_소음대책_요약.md`) 데이터셋을 기반으로, 가장 보편적인 **일반형 RAG(Naive RAG)**와 성능이 개선된 **재정렬형 RAG(Advanced RAG with Cohere Rerank)**의 성능 및 답변 품질을 실시간으로 비교 검증할 수 있는 정적 웹 대시보드 애플리케이션입니다.
 
 ---
