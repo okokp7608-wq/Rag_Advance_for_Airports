@@ -44,12 +44,24 @@
 | **배포 환경** | **Static Web App (HTML, CSS, JS)** | 서버리스(Serverless) 브라우저 구동 환경 (GitHub Pages 배포 최적화) |
 
 ---
-
 ## 4. 청킹(Chunking) 전략
-- **방식**: **Section-based Smart Chunking (섹션 기반 스마트 청킹)**
-- **규칙**: `김포공항_소음대책_요약.md` 파일 내의 `##` 및 `###` 마크다운 헤더 경계를 감지하여 지능적으로 분리합니다.
-- **맥락 유지 (Context Preservation)**: 각 청크 본문 앞에 해당 문서의 섹션 경로(예: `## 6. 소음대책사업 종류 및 기준 > ### 주택 방음시설 설치사업`)를 자동으로 접두사(Prefix)로 포함시켜, 검색 시 제목 키워드 유실로 인한 유사도 하락을 방지하고 LLM의 환각(Hallucination) 현상을 차단합니다.
-- **결과**: 총 **33개**의 의미적으로 정제된 주거 지원, 연혁, 통계, FAQ 단위 청크가 생성되었습니다.
+
+* **방식**: **Markdown Header-based JSON Chunking**
+* **입력 파일**: `김포공항_소음대책_요약.md`
+* **변환 방식**: Markdown 문서의 `##` 및 `###` 헤더를 기준으로 섹션을 분리한 뒤, 각 섹션을 독립적인 JSON 객체로 변환합니다.
+* **JSON 구조**: 각 청크는 `chunk_id`, `document_title`, `chapter`, `section`, `article_title`, `content`, `source_path` 필드를 가집니다.
+* **맥락 유지(Context Preservation)**: `source_path`에 문서 제목부터 상위 장, 하위 섹션까지의 경로를 저장합니다. 예: `2025 김포국제공항 소음대책 요약 > 6. 소음대책사업 종류 및 기준 > 주택 방음시설 설치사업`
+* **Vector DB 적재 방식**:
+
+  * `content`는 embedding 생성 대상 텍스트로 사용합니다.
+  * `metadata`에는 `chunk_id`, `document_title`, `chapter`, `section`, `article_title`, `source_path`를 JSON 형태로 저장합니다.
+  * `embedding`에는 `content`를 임베딩한 1536차원 벡터를 저장합니다.
+* **장점**:
+
+  * Markdown보다 검색 결과의 출처 추적이 쉽습니다.
+  * Supabase의 `metadata jsonb` 필터링에 적합합니다.
+  * 섹션명, 장 제목, 문서 경로를 함께 보존하므로 RAG 답변 시 환각을 줄일 수 있습니다.
+* **결과**: Markdown 문서는 총 30개의 의미 단위 JSON 청크로 변환되었습니다. 각 청크는 법령, 소음대책지역, 연혁, 운항 현황, 지원사업, FAQ, 문의처 등 질의응답에 적합한 단위로 분리되었습니다.
 
 ---
 
