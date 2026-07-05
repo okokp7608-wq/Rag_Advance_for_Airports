@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>김포국제공항 소음대책 RAG 비교 검증 서비스</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Background Glow Decorators -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="main-header">
+      <div class="logo-area">
+        <span class="icon-logo">✈️</span>
+        <div>
+          <h1>김포국제공항 소음대책 RAG 비교 서비스</h1>
+          <p class="subtitle">OpenAI text-embedding-3-small + Supabase Vector DB + Cohere Rerank + OpenRouter Gemini</p>
+        </div>
+      </div>
+      
+      <!-- Connection Status Bar -->
+      <div class="status-panel glass">
+        <div class="status-indicator" id="status-openai">
+          <span class="status-dot warning"></span>
+          <span class="status-label">OpenAI Connecting...</span>
+        </div>
+        <div class="status-indicator" id="status-supabase">
+          <span class="status-dot warning"></span>
+          <span class="status-label">Supabase Checking...</span>
+        </div>
+        <div class="status-indicator" id="status-cohere">
+          <span class="status-dot warning"></span>
+          <span class="status-label">Cohere Checking...</span>
+        </div>
+        <div class="status-indicator" id="status-openrouter">
+          <span class="status-dot warning"></span>
+          <span class="status-label">OpenRouter Checking...</span>
+        </div>
+        <button id="btn-check-status" class="btn btn-status" style="padding: 4px 10px; font-size: 11px; border-radius: 20px;">
+          <i data-lucide="refresh-cw" style="width: 11px; height: 11px;"></i> 갱신
+        </button>
+      </div>
+    </header>
+
+    <!-- API configuration cards -->
+    <section class="setup-section glass">
+      <div class="section-header">
+        <i data-lucide="settings" style="color: var(--naive-color)"></i>
+        <h3>RAG 환경 설정 (API Key 입력)</h3>
+      </div>
+      
+      <div class="security-alert">
+        <i data-lucide="shield-check"></i>
+        <span>입력된 API Key는 브라우저 메모리에만 유지되며, 외부 백엔드 서버나 쿠키로 절대 전송되거나 수집되지 않습니다.</span>
+      </div>
+
+      <div class="api-grid">
+        <div class="input-group">
+          <label for="cohere-key">Cohere API Key (Rerank용)</label>
+          <input type="password" id="cohere-key" placeholder="Cohere API Key..." autocomplete="off">
+        </div>
+        <div class="input-group">
+          <label for="openrouter-key">OpenRouter API Key (Gemini 답변 생성용)</label>
+          <input type="password" id="openrouter-key" placeholder="sk-or-..." autocomplete="off">
+        </div>
+        <div class="input-group">
+          <label for="chat-model">Generation LLM Model (OpenRouter)</label>
+          <select id="chat-model" class="btn" style="background: rgba(10, 15, 26, 0.8); border: 1px solid rgba(255,255,255,0.1); height: 41px; padding: 0 10px; font-size:14px; text-align: left; border-radius: var(--radius-sm)">
+            <option value="google/gemini-2.5-flash">google/gemini-2.5-flash (추천)</option>
+            <option value="google/gemini-2.5-pro">google/gemini-2.5-pro (고해상도 추론)</option>
+            <option value="openai/gpt-4o-mini">openai/gpt-4o-mini (빠름)</option>
+            <option value="meta-llama/llama-3.1-70b-instruct">meta-llama/llama-3.1-70b-instruct</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="setup-footer">
+        <label class="checkbox-label">
+          <input type="checkbox" id="save-keys" checked>
+          <span>브라우저(localStorage)에 API Key를 저장하여 자동 로드 (개인 개발환경 권장)</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Query input container -->
+    <section class="query-section glass">
+      <form id="query-form" class="query-form">
+        <div class="input-wrapper">
+          <i data-lucide="search" style="color: var(--text-muted)"></i>
+          <input type="text" id="query-input" class="search-input" placeholder="김포공항 소음대책에 대해 질문해 보세요 (예: 하절기 전기료 지원금액은?)" required autocomplete="off">
+          <button type="submit" id="btn-submit" class="btn btn-primary">
+            <span>질문하기</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </div>
+      </form>
+
+      <!-- Recommended Queries -->
+      <div class="quick-queries">
+        <span class="quick-label"><i data-lucide="sparkles"></i> 추천 질문:</span>
+        <button class="quick-btn">하절기 주민 주거용 냉방시설 전기료 지원금액과 신청기간은 어떻게 되나요?</button>
+        <button class="quick-btn">항공기 소음 측정 단위인 Lden은 기존 WECPNL과 어떻게 다른가요?</button>
+        <button class="quick-btn">김포공항에서 이착륙하는 항공기 중 C급 항공기의 운항 비율과 특징은 무엇인가요?</button>
+        <button class="quick-btn">인천공항 개항 후에도 김포공항에 국제선이 다니는 이유는 무엇인가요?</button>
+      </div>
+    </section>
+
+    <!-- Pipeline Workflow Steps -->
+    <div class="flow-container glass">
+      <div class="flow-step" id="step-1">
+        <span class="step-num">1</span>
+        <span>질문 임베딩 생성 (OpenAI)</span>
+      </div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step" id="step-2">
+        <span class="step-num">2</span>
+        <span>Supabase 벡터 검색 (Naive Top 5 / Adv Top 20)</span>
+      </div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step" id="step-3">
+        <span class="step-num">3</span>
+        <span>Cohere Rerank 재정렬 (Advanced Top 5 추출)</span>
+      </div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step" id="step-4">
+        <span class="step-num">4</span>
+        <span>Gemini 답변 생성 (OpenRouter)</span>
+      </div>
+    </div>
+
+    <!-- Parallel columns comparison -->
+    <div class="comparison-grid">
+      <!-- Column 1: Naive RAG -->
+      <section class="column-panel glass border-naive" id="panel-naive">
+        <div class="column-header">
+          <div class="column-title">
+            <span class="badge badge-naive">Naive RAG (Standard)</span>
+            <h2>일반 벡터 검색 RAG</h2>
+          </div>
+        </div>
+
+        <!-- Placeholder state -->
+        <div class="placeholder-state">
+          <i data-lucide="message-square" class="placeholder-icon"></i>
+          <h3>Naive RAG 답변 대기 중</h3>
+          <p>질문을 입력하면 벡터 유사도 검색 후 Gemini 모델의 답변이 표시됩니다.</p>
+        </div>
+
+        <!-- Loading state -->
+        <div class="loading-state hidden">
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-text" style="margin-top: 10px;"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text" style="width: 60%"></div>
+          <div class="skeleton skeleton-card"></div>
+        </div>
+
+        <!-- Real content state -->
+        <div class="content-state hidden">
+          <div class="metrics-row">
+            <div class="metric-card">
+              <span class="metric-label">검색 속도</span>
+              <span class="metric-value" id="naive-time-retrieval">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">생성 속도</span>
+              <span class="metric-value" id="naive-time-generation">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">전체 소요 시간</span>
+              <span class="metric-value" id="naive-time-total">-</span>
+            </div>
+          </div>
+
+          <div class="answer-section" style="margin-top: 15px;">
+            <div class="section-title">
+              <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--naive-color)"></i>
+              <span>AI 생성 답변</span>
+            </div>
+            <div class="answer-box" id="naive-answer"></div>
+          </div>
+
+          <div class="answer-section" style="margin-top: 15px;">
+            <div class="section-title">
+              <i data-lucide="database" style="width: 16px; height: 16px; color: var(--naive-color)"></i>
+              <span>유사도 기반 매칭 청크 (Top 5)</span>
+            </div>
+            <div class="chunks-list" id="naive-chunks-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Column 2: Advanced RAG -->
+      <section class="column-panel glass border-advanced" id="panel-advanced">
+        <div class="column-header">
+          <div class="column-title">
+            <span class="badge badge-advanced">Advanced RAG (Reranked)</span>
+            <h2>재정렬 기반 RAG</h2>
+          </div>
+        </div>
+
+        <!-- Placeholder state -->
+        <div class="placeholder-state">
+          <i data-lucide="sparkles" class="placeholder-icon"></i>
+          <h3>Advanced RAG 답변 대기 중</h3>
+          <p>질문을 입력하면 Top 20 검색 후 Cohere Rerank를 거쳐 정제된 답변이 표시됩니다.</p>
+        </div>
+
+        <!-- Loading state -->
+        <div class="loading-state hidden">
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-text" style="margin-top: 10px;"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text" style="width: 60%"></div>
+          <div class="skeleton skeleton-card"></div>
+        </div>
+
+        <!-- Real content state -->
+        <div class="content-state hidden">
+          <div class="metrics-row">
+            <div class="metric-card">
+              <span class="metric-label">검색 속도</span>
+              <span class="metric-value" id="adv-time-retrieval">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Rerank 속도</span>
+              <span class="metric-value" id="adv-time-rerank">-</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">전체 소요 시간</span>
+              <span class="metric-value" id="adv-time-total">-</span>
+            </div>
+            <div class="metric-card" style="display:none">
+              <span class="metric-label">생성 속도</span>
+              <span class="metric-value" id="adv-time-generation">-</span>
+            </div>
+          </div>
+
+          <div class="answer-section" style="margin-top: 15px;">
+            <div class="section-title">
+              <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--advanced-color)"></i>
+              <span>AI 생성 답변 (Reranked Context)</span>
+            </div>
+            <div class="answer-box" id="adv-answer"></div>
+          </div>
+
+          <div class="answer-section" style="margin-top: 15px;">
+            <div class="section-title">
+              <i data-lucide="database" style="width: 16px; height: 16px; color: var(--advanced-color)"></i>
+              <span>Rerank 재정렬 매칭 청크 (Top 5 / 20개 중)</span>
+            </div>
+            <div class="chunks-list" id="adv-chunks-list"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Comparative Analysis Dashboard Panel -->
+    <section class="summary-panel glass">
+      <div class="section-header">
+        <i data-lucide="bar-chart-3" style="color: var(--accent-color)"></i>
+        <h3>RAG 성능 및 비용 메트릭 비교 요약</h3>
+      </div>
+      
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>구분 (RAG 방식)</th>
+            <th>1차 벡터 검색 (Supabase)</th>
+            <th>2차 재정렬 (Cohere Rerank)</th>
+            <th>LLM 답변 생성 (Gemini)</th>
+            <th>전체 소요 시간</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Naive RAG</strong></td>
+            <td id="db-naive-search">-</td>
+            <td id="db-naive-rerank">-</td>
+            <td id="db-naive-gen">-</td>
+            <td id="db-naive-total" style="color: var(--naive-color); font-weight: bold;">-</td>
+          </tr>
+          <tr>
+            <td><strong>Advanced RAG</strong></td>
+            <td id="db-adv-search">-</td>
+            <td id="db-adv-rerank">-</td>
+            <td id="db-adv-gen">-</td>
+            <td id="db-adv-total" style="color: var(--advanced-color); font-weight: bold;">-</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div id="comparison-summary" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); font-size: 14px; border-left: 3px solid var(--accent-color)">
+        <p id="comparison-summary-text">질문을 입력하고 실행하면 두 RAG 파이프라인의 검색 정밀도 및 속도를 종합 비교한 분석 결과가 여기에 표시됩니다.</p>
+      </div>
+    </section>
+
+    <!-- Supabase SQL Helper Section -->
+    <section class="summary-panel glass" style="margin-top: 10px;">
+      <div class="section-header">
+        <i data-lucide="database" style="color: var(--warning)"></i>
+        <h3>Supabase SQL DDL 가이드</h3>
+      </div>
+      <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 12px;">
+        본 서비스는 Supabase PostgreSQL 데이터베이스에 아래 DDL 스크립트를 통해 테이블과 유사도 검색용 RPC 함수(`ai_rag_match_documents`)가 설치되어 있어야 작동합니다.
+      </p>
+      <div class="sql-code-container" style="background: rgba(10,15,26,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-sm); position: relative;">
+        <pre style="margin: 0; padding: 15px; font-family: var(--font-mono); font-size: 12px; color: #a5b4fc; overflow-x: auto;"><code>-- 1. pgvector 확장 활성화
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 2. 문서 테이블 생성
+CREATE TABLE IF NOT EXISTS ai_rag_documents (
+    id BIGSERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    embedding VECTOR(1536),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. HNSW 인덱스 생성
+CREATE INDEX IF NOT EXISTS ai_rag_documents_embedding_hnsw_idx
+ON ai_rag_documents
+USING hnsw (embedding vector_cosine_ops);
+
+-- 4. 코사인 유사도 매칭 함수 정의
+CREATE OR REPLACE FUNCTION ai_rag_match_documents(
+    query_embedding VECTOR(1536),
+    match_count INT DEFAULT 5,
+    filter JSONB DEFAULT '{}'::jsonb
+)
+RETURNS TABLE (
+    id BIGINT,
+    content TEXT,
+    metadata JSONB,
+    similarity FLOAT
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+#variable_conflict use_column
+BEGIN
+    RETURN QUERY
+    SELECT
+        d.id,
+        d.content,
+        d.metadata,
+        1 - (d.embedding <=> query_embedding) AS similarity
+    FROM ai_rag_documents d
+    WHERE d.metadata @> filter
+    ORDER BY d.embedding <=> query_embedding
+    LIMIT match_count;
+END;
+$$;</code></pre>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
