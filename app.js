@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const chkSaveKeys = document.getElementById('save-keys');
 
   const btnCheckStatus = document.getElementById('btn-check-status');
-  const statusOpenai = document.getElementById('status-openai');
   const statusSupabase = document.getElementById('status-supabase');
   const statusCohere = document.getElementById('status-cohere');
   const statusOpenrouter = document.getElementById('status-openrouter');
@@ -138,34 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 2. Check OpenAI
-    if (!openaiKey) {
-      updateStatusLabel(statusOpenai, 'danger', 'Key missing');
-    } else {
-      updateStatusLabel(statusOpenai, 'warning', 'Checking...');
-      try {
-        const res = await fetch('https://api.openai.com/v1/embeddings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openaiKey}`
-          },
-          body: JSON.stringify({
-            input: 'status check',
-            model: 'text-embedding-3-small'
-          })
-        });
-        if (res.ok) {
-          updateStatusLabel(statusOpenai, 'success', 'Ready');
-        } else {
-          updateStatusLabel(statusOpenai, 'danger', 'Unauthorized');
-        }
-      } catch (err) {
-        updateStatusLabel(statusOpenai, 'danger', 'Connection failed');
-      }
-    }
-
-    // 3. Check Cohere Rerank
+    // 2. Check Cohere Rerank
     if (!cohereKey) {
       updateStatusLabel(statusCohere, 'danger', 'Key missing');
     } else {
